@@ -10,6 +10,14 @@ class DatabaseService {
   final CollectionReference groupColleciton =
       FirebaseFirestore.instance.collection("groups");
 
-  // updateing the userdata
-  Future updateUserData(String name, String email) async {}
+  // saving the userdata
+  Future savingUserData(String name, String email) async {
+    return await userCollection.doc(uid).set({
+      "name": name,
+      "email": email,
+      "groups": [],
+      "profilePic": "",
+      "uid": uid
+    });
+  }
 }

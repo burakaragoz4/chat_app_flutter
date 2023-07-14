@@ -21,3 +21,16 @@ void nextScreen(context, page) =>
     Navigator.push(context, MaterialPageRoute(builder: (context) => page));
 void nextScreenReplace(context, page) => Navigator.pushReplacement(
     context, MaterialPageRoute(builder: (context) => page));
+
+void showSnackBar(context, color, message) =>
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+          action: SnackBarAction(
+            label: "OK",
+            onPressed: () {},
+            textColor: Colors.white,
+          ),
+          content: Text(message, style: const TextStyle(fontSize: 14)),
+          duration: const Duration(seconds: 2),
+          backgroundColor: color),
+    );
