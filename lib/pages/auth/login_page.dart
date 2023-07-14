@@ -1,6 +1,10 @@
+import 'package:chat_app_flutter/helper/helper_functions.dart';
 import 'package:chat_app_flutter/pages/auth/register_page.dart';
 import 'package:chat_app_flutter/service/auth_service.dart';
+import 'package:chat_app_flutter/service/database_service.dart';
 import 'package:chat_app_flutter/widgets/widgets.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
@@ -144,6 +148,13 @@ class _LoginPageState extends State<LoginPage> {
           .loginUserWithEmailandPassword(email, password)
           .then((value) async {
         if (value == true) {
+          QuerySnapshot snapshot =
+              await DatabaseService(uid: FirebaseAuth.instance.currentUser?.uid)
+                  .gettingUserData(email);
+          //saving
+          await HelperFunctions.saveUserLoggedInStatus(true);
+          await HelperFunctions.saveUserEmail(email);
+          await HelperFunctions.saveUserName(snapshot.docs[0]['name']);
           // ignore: use_build_context_synchronously
           nextScreen(context, const HomePage());
         } else {
