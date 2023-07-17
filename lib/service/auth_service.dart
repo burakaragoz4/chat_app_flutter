@@ -8,9 +8,18 @@ class AuthService {
   //login
   Future loginUserWithEmailandPassword(String email, String password) async {
     try {
-      return true;
-    } on FirebaseAuthException catch (e) {
-      return e.message;
+      User user = (await _auth.signInWithEmailAndPassword(
+              email: email, password: password))
+          .user!;
+
+      // ignore: unnecessary_null_comparison
+      if (user != null) {
+        return true;
+      } else {
+        return false;
+      }
+    } on FirebaseAuthException {
+      return 'Lütfen Mail Adresinizi veya Şifrenizi Kontrol Ediniz';
     }
   }
 

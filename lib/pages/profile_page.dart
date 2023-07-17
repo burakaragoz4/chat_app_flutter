@@ -20,14 +20,11 @@ class _ProfilerPageState extends State<ProfilerPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: PreferredSize(
-          preferredSize: const Size.fromHeight(50),
-          child: AppbarPage(text: 'Profil')),
-      drawer: _drawer(context),
-      body: const Center(
-        child: Text('Profil Sayfası'),
-      ),
-    );
+        appBar: PreferredSize(
+            preferredSize: const Size.fromHeight(50),
+            child: AppbarPage(text: 'Profil')),
+        drawer: _drawer(context),
+        body: _container());
   }
 
   Drawer _drawer(BuildContext context) {
@@ -106,4 +103,38 @@ class _ProfilerPageState extends State<ProfilerPage> {
       ),
     );
   }
+
+  Container _container() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 120),
+      child: _column(),
+    );
+  }
+
+  Column _column() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: [
+        const Icon(Icons.account_circle, size: 200),
+        _emptyBox,
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('Ad', style: TextStyle(fontSize: 17)),
+            Text(widget.userName, style: const TextStyle(fontSize: 17))
+          ],
+        ),
+        const Divider(height: 20),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('Email', style: TextStyle(fontSize: 17)),
+            Text(widget.userEmail, style: const TextStyle(fontSize: 17))
+          ],
+        )
+      ],
+    );
+  }
+
+  get _emptyBox => const SizedBox(height: 15);
 }

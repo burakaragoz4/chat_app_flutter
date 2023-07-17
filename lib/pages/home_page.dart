@@ -3,7 +3,10 @@ import 'package:chat_app_flutter/pages/auth/login_page.dart';
 import 'package:chat_app_flutter/pages/profile_page.dart';
 import 'package:chat_app_flutter/pages/search_page.dart';
 import 'package:chat_app_flutter/service/auth_service.dart';
+import 'package:chat_app_flutter/service/database_service.dart';
+import 'package:chat_app_flutter/widgets/group_tile.dart';
 import 'package:chat_app_flutter/widgets/widgets.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class HomePage extends StatefulWidget {
@@ -18,11 +21,23 @@ class _HomePageState extends State<HomePage> {
   final AuthService _authService = AuthService();
   String userName = '';
   String userEmail = '';
+  Stream? groups;
+  bool _isLoading = false;
+  String groupName = '';
 
   @override
   void initState() {
     super.initState();
     gettingUserData();
+  }
+
+  //String manipulation
+  String getId(String res) {
+    return res.substring(0, res.indexOf('_'));
+  }
+
+  String getName(String res) {
+    return res.substring(res.indexOf('_') + 1);
   }
 
   gettingUserData() async {
@@ -36,14 +51,23 @@ class _HomePageState extends State<HomePage> {
         userName = value!;
       });
     });
+
+    await DatabaseService(uid: FirebaseAuth.instance.currentUser?.uid)
+        .getUserGroups()
+        .then((snapshot) {
+      setState(() {
+        groups = snapshot;
+      });
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: _appBar(context),
-      drawer: _drawer(context),
-    );
+        appBar: _appBar(context),
+        drawer: _drawer(context),
+        body: groupList(),
+        floatingActionButton: _floatingActionButton);
   }
 
   AppBar _appBar(BuildContext context) {
@@ -140,5 +164,159 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
     );
+  }
+
+  groupList() {
+    return StreamBuilder(
+      stream: groups,
+      builder: (context, AsyncSnapshot snapshot) {
+        if (snapshot.hasData) {
+          final data = snapshot.data?.data();
+          if (data != null && data['groups'] != null) {
+            if (data['groups'].length != 0) {
+              return ListView.builder(
+                itemCount: snapshot.data['groups'].length,
+                itemBuilder: (context, index) {
+                  int reverseIndex = snapshot.data['groups'].length - index - 1;
+                  return GroupTile(
+                      groupId: getId(snapshot.data['groups'][reverseIndex]),
+                      groupName: getName(snapshot.data['groups'][reverseIndex]),
+                      userName: snapshot.data['name']);
+                },
+              );
+            } else {
+              return noGroupWidget();
+            }
+          } else {
+            return noGroupWidget();
+          }
+        } else {
+          return Center(
+            child: CircularProgressIndicator(
+              color: Theme.of(context).primaryColor,
+            ),
+          );
+        }
+      },
+    );
+  }
+
+  noGroupWidget() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 25),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          GestureDetector(
+            onTap: () => popUpDiaglog(context),
+            child: Icon(
+              Icons.add_circle,
+              color: Colors.grey[700],
+              size: 75,
+            ),
+          ),
+          _emptyBox,
+          const Text(
+            'Bir gruba katılmadınız, grup oluşturmak için ekle simgesinin üstüne tıklayın veya bir gruba katılmak için üst arama düğmesinden yardım alın.',
+            textAlign: TextAlign.center,
+          )
+        ],
+      ),
+    );
+  }
+
+  get _emptyBox => const SizedBox(height: 20);
+  Widget get _floatingActionButton => FloatingActionButton(
+        onPressed: () {
+          popUpDiaglog(context);
+        },
+        child: const Icon(
+          Icons.add,
+          color: Colors.white,
+          size: 30,
+        ),
+      );
+  popUpDiaglog(BuildContext context) {
+    showDialog(
+        barrierDismissible: false,
+        context: context,
+        builder: (context) {
+          return StatefulBuilder(builder: ((context, setState) {
+            return AlertDialog(
+              title: const Text(
+                'Yeni Grup Oluştur',
+                textAlign: TextAlign.center,
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _isLoading == true
+                      ? Center(
+                          child: CircularProgressIndicator(
+                          color: Theme.of(context).primaryColor,
+                        ))
+                      : TextField(
+                          onChanged: (val) {
+                            setState(() {
+                              groupName = val;
+                            });
+                          },
+                          style: const TextStyle(color: Colors.black),
+                          decoration: InputDecoration(
+                            enabledBorder: OutlineInputBorder(
+                                borderSide: BorderSide(
+                                    color: Theme.of(context).primaryColor),
+                                borderRadius: BorderRadius.circular(20)),
+                            errorBorder: OutlineInputBorder(
+                                borderSide: const BorderSide(color: Colors.red),
+                                borderRadius: BorderRadius.circular(20)),
+                            focusedBorder: OutlineInputBorder(
+                                borderSide: BorderSide(
+                                    color: Theme.of(context).primaryColor),
+                                borderRadius: BorderRadius.circular(20)),
+                          ),
+                        )
+                ],
+              ),
+              actions: [
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).primaryColor),
+                  child: const Text('KAPAT'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (groupName != '') {
+                      setState(() {
+                        _isLoading = true;
+                      });
+
+                      DatabaseService(
+                              uid: FirebaseAuth.instance.currentUser?.uid)
+                          .createGroup(
+                              userName,
+                              (FirebaseAuth.instance.currentUser?.uid)
+                                  .toString(),
+                              groupName)
+                          .whenComplete(() {
+                        _isLoading = false;
+                      });
+                      Navigator.of(context).pop();
+                      showSnackBar(context, Colors.green,
+                          'Grup başarılıyla oluşturuldu');
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).primaryColor),
+                  child: const Text('OLUŞTUR'),
+                )
+              ],
+            );
+          }));
+        });
   }
 }
