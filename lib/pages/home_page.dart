@@ -181,7 +181,7 @@ class _HomePageState extends State<HomePage> {
                   return GroupTile(
                       groupId: getId(snapshot.data['groups'][reverseIndex]),
                       groupName: getName(snapshot.data['groups'][reverseIndex]),
-                      userName: snapshot.data['name']);
+                      userName: snapshot.data['fullName']);
                 },
               );
             } else {
